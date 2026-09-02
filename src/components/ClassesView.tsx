@@ -13,6 +13,7 @@ import {
 import { ClassInfo, Student, Transaction } from '../types';
 import { formatRupiah, getSavingsBreakdown } from '../utils/formatters';
 import { ClassModal } from './ClassModal';
+import { ConfirmDeleteModal, DeleteTarget } from './ConfirmDeleteModal';
 import { showToast } from './Toast';
 
 interface ClassesViewProps {
@@ -47,6 +48,8 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassInfo | null>(null);
   const [selectedClassForDetails, setSelectedClassForDetails] = useState<ClassInfo | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Calculate statistics per class
   const classStats = useMemo(() => {
@@ -173,26 +176,22 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
   const handleDelete = (c: ClassInfo) => {
     const stats = classStats.get(c.name);
     const count = stats?.studentCount || 0;
+    setDeleteTarget({ type: 'class', item: c, studentCount: count });
+    setIsDeleteModalOpen(true);
+  };
 
-    if (count > 0) {
-      if (
-        !window.confirm(
-          `Kelas "${c.name}" saat ini memiliki ${count} siswa terdaftar. Apakah Anda yakin ingin menghapus kelas ini? Data siswa akan tetap tersimpan dalam sistem.`
-        )
-      ) {
-        return;
+  const handleExecuteDelete = () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === 'class') {
+      const c = deleteTarget.item;
+      onDeleteClass(c.id, c.name);
+      if (selectedClassForDetails?.id === c.id) {
+        setSelectedClassForDetails(null);
       }
-    } else {
-      if (!window.confirm(`Hapus kelas "${c.name}"?`)) {
-        return;
-      }
+      showToast('Kelas Dihapus', `Kelas ${c.name} berhasil dihapus.`);
     }
-
-    onDeleteClass(c.id, c.name);
-    if (selectedClassForDetails?.id === c.id) {
-      setSelectedClassForDetails(null);
-    }
-    showToast('Kelas Dihapus', `Kelas ${c.name} berhasil dihapus.`);
+    setIsDeleteModalOpen(false);
+    setDeleteTarget(null);
   };
 
   const handleExportClassSummary = () => {
@@ -599,17 +598,20 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
             return (
               <div
                 key={cls.id}
-                className="bg-[#ffffff] rounded-2xl border border-[#becabd]/70 hover:border-[#006130] transition-all p-5 shadow-[0_4px_12px_rgba(0,0,0,0.03)] hover:shadow-md flex flex-col justify-between group"
+                className="bg-[#ffffff] rounded-2xl border border-[#becabd]/70 hover:border-[#006130]/70 transition-all duration-200 p-5 shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_10px_25px_rgba(0,97,48,0.08)] hover:-translate-y-1 flex flex-col justify-between group relative overflow-hidden"
               >
+                {/* Top Subtle Emerald Accent Line */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#006130] to-[#005db5] opacity-80 group-hover:h-1.5 transition-all duration-200" />
+
                 <div>
-                  {/* Class Card Top */}
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-lg font-black text-[#1a1c1c] group-hover:text-[#006130] transition-colors">
+                  {/* Class Card Top Header */}
+                  <div className="flex items-start justify-between gap-3 mb-3 pt-0.5">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-lg font-black text-[#1a1c1c] group-hover:text-[#006130] transition-colors truncate">
                           {cls.name}
                         </h4>
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#faf9f8] border border-[#becabd] text-[#3f4940]">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#faf9f8] border border-[#becabd] text-[#3f4940] whitespace-nowrap shadow-2xs">
                           {cls.level || 'Reguler'}
                         </span>
                       </div>
@@ -619,7 +621,7 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => {
                           setEditingClass(cls);
@@ -642,24 +644,24 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
 
                   {/* Wali Kelas Info */}
                   <div className="bg-[#faf9f8] p-3 rounded-xl border border-[#becabd]/40 space-y-1.5 mb-4">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-[#3f4940] flex items-center gap-1">
+                    <div className="flex items-center justify-between text-xs gap-2">
+                      <span className="text-[#3f4940] flex items-center gap-1 shrink-0">
                         <span className="material-symbols-outlined text-sm text-[#006130]">school</span>
                         <span>Wali Kelas:</span>
                       </span>
-                      <span className="font-bold text-[#1a1c1c] truncate max-w-[140px]">
+                      <span className="font-bold text-[#1a1c1c] truncate text-right">
                         {cls.homeroomTeacher || 'Belum Ditentukan'}
                       </span>
                     </div>
                     {cls.teacherPhone && (
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-[#3f4940] flex items-center gap-1">
+                      <div className="flex items-center justify-between text-xs gap-2">
+                        <span className="text-[#3f4940] flex items-center gap-1 shrink-0">
                           <span className="material-symbols-outlined text-sm text-[#005db5]">call</span>
                           <span>No. Telepon:</span>
                         </span>
                         <a
                           href={`tel:${cls.teacherPhone}`}
-                          className="font-semibold text-[#005db5] hover:underline"
+                          className="font-semibold text-[#005db5] hover:underline truncate"
                         >
                           {cls.teacherPhone}
                         </a>
@@ -669,9 +671,9 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
 
                   {/* Financial Overview within Class */}
                   <div className="space-y-2 mb-4">
-                    <div className="flex justify-between items-baseline">
+                    <div className="flex justify-between items-baseline gap-2">
                       <span className="text-xs text-[#3f4940]">Total Saldo Tabungan:</span>
-                      <span className="text-base font-black text-[#006130]">
+                      <span className="text-base sm:text-lg font-black text-[#006130] truncate">
                         {formatRupiah(stats.totalBalance)}
                       </span>
                     </div>
@@ -679,32 +681,36 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
                     {/* 80/20 Mini Bar */}
                     <div className="w-full bg-[#f4f3f2] h-2 rounded-full overflow-hidden flex border border-[#becabd]/40">
                       <div
-                        className="bg-[#006130] h-full"
+                        className="bg-[#006130] h-full transition-all duration-500"
                         style={{ width: '80%' }}
-                        title="80% Bisa Ditarik"
-                      ></div>
+                        title="80% Bisa Ditarik (Likuid)"
+                      />
                       <div
-                        className="bg-[#ba1a1a] h-full"
+                        className="bg-[#ba1a1a] h-full transition-all duration-500"
                         style={{ width: '20%' }}
-                        title="20% Terkunci"
-                      ></div>
+                        title="20% Terkunci (Cadangan)"
+                      />
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-[11px] pt-1">
-                      <div className="bg-[#f4f3f2] p-2 rounded-lg">
-                        <span className="text-[#3f4940] block text-[10px]">80% Likuid:</span>
-                        <span className="font-bold text-[#006130]">{formatRupiah(stats.availableBalance)}</span>
+                      <div className="bg-[#006130]/5 hover:bg-[#006130]/10 border border-[#006130]/15 rounded-xl p-2 transition-colors">
+                        <span className="text-[#006130] block text-[10px] font-bold mb-0.5">80% Likuid:</span>
+                        <span className="font-black text-[#006130] text-xs truncate block" title={formatRupiah(stats.availableBalance)}>
+                          {formatRupiah(stats.availableBalance)}
+                        </span>
                       </div>
-                      <div className="bg-[#f4f3f2] p-2 rounded-lg">
-                        <span className="text-[#3f4940] block text-[10px]">20% Terkunci:</span>
-                        <span className="font-bold text-[#ba1a1a]">{formatRupiah(stats.lockedBalance)}</span>
+                      <div className="bg-[#ba1a1a]/5 hover:bg-[#ba1a1a]/10 border border-[#ba1a1a]/15 rounded-xl p-2 transition-colors">
+                        <span className="text-[#ba1a1a] block text-[10px] font-bold mb-0.5">20% Terkunci:</span>
+                        <span className="font-black text-[#ba1a1a] text-xs truncate block" title={formatRupiah(stats.lockedBalance)}>
+                          {formatRupiah(stats.lockedBalance)}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Card Footer Actions */}
-                <div className="pt-3 border-t border-[#becabd]/40 flex items-center justify-between gap-2">
+                <div className="pt-3 border-t border-[#becabd]/40 flex flex-wrap items-center justify-between gap-2">
                   <div className="text-xs">
                     <span className="font-black text-[#1a1c1c]">{stats.studentCount}</span>{' '}
                     <span className="text-[#3f4940]">Siswa</span>
@@ -714,11 +720,11 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <button
                       type="button"
                       onClick={() => setSelectedClassForDetails(cls)}
-                      className="px-2.5 py-1.5 rounded-lg bg-[#faf9f8] hover:bg-[#e9e8e7] text-[#1a1c1c] font-bold text-xs border border-[#becabd]/60 flex items-center gap-1 cursor-pointer transition-colors"
+                      className="px-2.5 py-1.5 rounded-lg bg-[#faf9f8] hover:bg-[#e9e8e7] text-[#1a1c1c] font-bold text-xs border border-[#becabd]/60 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
                       title="Lihat Daftar Siswa Kelas Ini"
                     >
                       <span className="material-symbols-outlined text-xs">group</span>
@@ -966,6 +972,17 @@ export const ClassesView: React.FC<ClassesViewProps> = ({
         onSaveClass={onSaveClass}
         initialData={editingClass}
         existingClasses={classes}
+      />
+
+      {/* Confirmation Modal for Delete Class */}
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        target={deleteTarget}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteTarget(null);
+        }}
+        onConfirm={handleExecuteDelete}
       />
     </div>
   );

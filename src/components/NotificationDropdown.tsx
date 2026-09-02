@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Student, Transaction } from '../types';
 import { formatRupiah, formatDateCustom } from '../utils/formatters';
+import { getBackupStatus } from '../utils/backupStorage';
 
 export interface NotificationItem {
   id: string;
-  type: 'inactive_student' | 'recent_transaction' | 'system' | 'goal_reached';
+  type: 'inactive_student' | 'recent_transaction' | 'system' | 'goal_reached' | 'backup_reminder';
   title: string;
   message: string;
   time: string;
@@ -60,6 +61,24 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
 
     // 1. Inactive Students Notifications (Admin only)
     if (isAdmin) {
+      // Weekly Backup Reminder Notification (Recommended 1x per week)
+      const bStatus = getBackupStatus();
+      if (bStatus.isOverdue || bStatus.statusLevel === 'warning') {
+        list.push({
+          id: 'notif-backup-weekly-reminder',
+          type: 'backup_reminder',
+          title: bStatus.daysSinceLastBackup === null
+            ? 'Pengingat: Belum Pernah Backup Data'
+            : `Pengingat: Waktunya Backup Rutin (${bStatus.daysSinceLastBackup} hari)`,
+          message:
+            'Disarankan melakukan backup data minimal 1 minggu 1 kali untuk melindungi data mutasi tabungan siswa.',
+          time: bStatus.daysSinceLastBackup === null ? 'Penting' : `${bStatus.daysSinceLastBackup} hr lalu`,
+          unread: !readIds.has('notif-backup-weekly-reminder'),
+          priority: bStatus.isOverdue ? 'high' : 'medium',
+          linkTab: 'backup',
+        });
+      }
+
       const inactiveList: Student[] = [];
       students.forEach((std) => {
         const deposits = transactions.filter(
@@ -243,6 +262,8 @@ export const NotificationDropdown: React.FC<NotificationDropdownProps> = ({
                   switch (item.type) {
                     case 'inactive_student':
                       return { icon: 'person_alert', bg: 'bg-amber-100 text-amber-800' };
+                    case 'backup_reminder':
+                      return { icon: 'settings_backup_restore', bg: 'bg-rose-100 text-rose-800' };
                     case 'recent_transaction':
                       return { icon: 'receipt_long', bg: 'bg-emerald-100 text-emerald-800' };
                     case 'goal_reached':

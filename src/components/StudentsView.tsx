@@ -5,6 +5,7 @@ import { exportStudentsToCSV, exportStudentsToJSON } from '../utils/studentDataH
 import { StudentImportModal } from './StudentImportModal';
 import { StudentFormModal } from './StudentFormModal';
 import { ClassManagementSection } from './ClassManagementSection';
+import { ConfirmDeleteModal, DeleteTarget } from './ConfirmDeleteModal';
 import { showToast } from './Toast';
 
 interface StudentsViewProps {
@@ -43,6 +44,8 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   const handleCopyStudentCredentials = (s: Student) => {
     const pin = s.pin || '123456';
@@ -151,10 +154,19 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   };
 
   const handleDeleteConfirm = (student: Student) => {
-    if (window.confirm(`Apakah Anda yakin ingin menghapus data siswa ${student.name} (${student.nisn})?`)) {
+    setDeleteTarget({ type: 'student', item: student });
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleExecuteDelete = () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === 'student') {
+      const student = deleteTarget.item;
       onDeleteStudent(student.id);
-      showToast('Siswa Dihapus', `Data ${student.name} telah dihapus dari sistem.`, 'info');
+      showToast('Siswa Dihapus', `Data siswa ${student.name} telah berhasil dihapus.`, 'info');
     }
+    setIsDeleteModalOpen(false);
+    setDeleteTarget(null);
   };
 
   return (
@@ -753,9 +765,18 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                           setEditingStudent(student);
                           setIsFormModalOpen(true);
                         }}
-                        className="p-1.5 hover:bg-[#e9e8e7] text-[#3f4940] rounded-lg transition-colors"
+                        title="Edit Siswa"
+                        className="p-1.5 hover:bg-[#e9e8e7] text-[#3f4940] rounded-lg transition-colors cursor-pointer"
                       >
                         <span className="material-symbols-outlined text-base">edit</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleDeleteConfirm(student)}
+                        title="Hapus Siswa"
+                        className="p-1.5 hover:bg-[#ffdad6] text-[#ba1a1a] rounded-lg transition-colors cursor-pointer"
+                      >
+                        <span className="material-symbols-outlined text-base">delete</span>
                       </button>
                     </div>
                   </div>
@@ -781,6 +802,17 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
         editingStudent={editingStudent}
         existingClasses={classNames.length > 0 ? classNames : ['Kelas 10A', 'Kelas 10B', 'Kelas 11A']}
         existingStudents={students}
+      />
+
+      {/* Confirmation Modal for Delete */}
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        target={deleteTarget}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteTarget(null);
+        }}
+        onConfirm={handleExecuteDelete}
       />
     </div>
   );

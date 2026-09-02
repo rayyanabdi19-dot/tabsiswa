@@ -21,6 +21,29 @@ export interface UserSession {
   schoolName?: string;
 }
 
+export interface SavingsPolicy {
+  usablePercentage: number; // e.g. 80
+  lockedPercentage: number; // e.g. 20
+  minLockNominal?: number; // e.g. 0
+  policyName?: string; // e.g. 'Standar Disiplin 80/20'
+  description?: string;
+  lastUpdated?: string;
+  updatedBy?: string;
+}
+
+export interface SavingsPolicyChangeLogItem {
+  id: string;
+  timestamp: string; // ISO date string
+  adminName: string;
+  adminEmail?: string;
+  oldUsablePercentage: number;
+  oldLockedPercentage: number;
+  newUsablePercentage: number;
+  newLockedPercentage: number;
+  reason: string;
+  adminConfirmationNote?: string;
+}
+
 export interface WhatsAppReceiptPayload {
   transactionId: string;
   studentName: string;
@@ -36,6 +59,8 @@ export interface WhatsAppReceiptPayload {
   totalBalance: number;
   availableBalance: number;
   lockedBalance: number;
+  usablePercentage?: number;
+  lockedPercentage?: number;
   adminName: string;
   schoolName: string;
 }
@@ -144,6 +169,8 @@ export interface SchoolInfo {
   principalName: string;
   treasurerName?: string;
   logoUrl: string;
+  savingsPolicy?: SavingsPolicy;
+  policyChangeLog?: SavingsPolicyChangeLogItem[];
 }
 
 export type AdminTab =
@@ -154,6 +181,7 @@ export type AdminTab =
   | 'history'
   | 'profile'
   | 'report'
+  | 'backup'
   | 'guide';
 
 export type StudentTab =

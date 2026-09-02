@@ -25,6 +25,7 @@ import { StudentProfileView } from './components/StudentProfileView';
 import { StudentPortalView } from './components/StudentPortalView';
 import { ReportGenerateView } from './components/ReportGenerateView';
 import { UserGuideView } from './components/UserGuideView';
+import { BackupRestoreView } from './components/BackupRestoreView';
 import { LoginView } from './components/LoginView';
 import { SettingsModal } from './components/SettingsModal';
 import { ToastContainer, showToast } from './components/Toast';
@@ -413,6 +414,32 @@ export default function App() {
     setSelectedStudentForProfile(INITIAL_STUDENTS[0]);
     localStorage.clear();
     showToast('Data Direset', 'Semua data telah dikembalikan ke kondisi awal sistem.');
+  };
+
+  const handleRestoreData = (restored: {
+    schoolInfo: SchoolInfo;
+    classes: ClassInfo[];
+    students: Student[];
+    transactions: Transaction[];
+  }) => {
+    if (restored.schoolInfo) setSchoolInfo(restored.schoolInfo);
+    if (restored.classes) setClasses(restored.classes);
+    if (restored.students) {
+      setStudents(restored.students);
+      if (restored.students.length > 0) {
+        setSelectedStudentForProfile(restored.students[0]);
+      }
+    }
+    if (restored.transactions) setTransactions(restored.transactions);
+
+    if (user?.accountId) {
+      saveAccountWorkspace(user.accountId, {
+        schoolInfo: restored.schoolInfo || schoolInfo,
+        classes: restored.classes || classes,
+        students: restored.students || students,
+        transactions: restored.transactions || transactions,
+      });
+    }
   };
 
   const handleDataSynced = (data: {
@@ -823,6 +850,7 @@ export default function App() {
                   initialType={initialTxType}
                   schoolName={schoolInfo.name}
                   adminName={user.name}
+                  schoolInfo={schoolInfo}
                   onSaveTransaction={handleSaveTransaction}
                 />
               </motion.div>
@@ -838,6 +866,7 @@ export default function App() {
               >
                 <HistoryView
                   transactions={transactions}
+                  students={students}
                   onOpenReport={() => setActiveTab('report')}
                   schoolInfo={schoolInfo}
                   adminName={user.name}
@@ -921,6 +950,26 @@ export default function App() {
                     setTransactions((prev) => [newTx, ...prev]);
                     showToast('Autodebet Sukses', `Setoran rutin ${formatRupiah(amount)} berhasil diproses.`);
                   }}
+                />
+              </motion.div>
+            )}
+
+            {isAdmin && activeTab === 'backup' && (
+              <motion.div
+                key="backup-view"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18 }}
+              >
+                <BackupRestoreView
+                  schoolInfo={schoolInfo}
+                  classes={classes}
+                  students={students}
+                  transactions={transactions}
+                  user={user}
+                  onRestoreData={handleRestoreData}
+                  onOpenSettings={() => setIsSettingsOpen(true)}
                 />
               </motion.div>
             )}

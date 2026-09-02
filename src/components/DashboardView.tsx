@@ -13,6 +13,15 @@ import {
 import { Student, Transaction } from '../types';
 import { formatRupiah, getSavingsBreakdown } from '../utils/formatters';
 import { InactiveStudentsNotification } from './InactiveStudentsNotification';
+import { TabsiLogo } from './TabsiLogo';
+import {
+  AppAboutModal,
+  APP_VERSION,
+  APP_BRAND_NAME,
+  APP_HELPDESK_EMAIL,
+  APP_HELPDESK_PHONE,
+  APP_HELPDESK_WA_URL,
+} from './AppAboutModal';
 
 interface DashboardViewProps {
   students: Student[];
@@ -38,6 +47,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [chartPeriod, setChartPeriod] = useState<'30days' | '90days' | 'year'>('30days');
   const [hoveredPoint, setHoveredPoint] = useState<{ x: number; y: number; label: string; value: number } | null>(null);
   const [barChartMode, setBarChartMode] = useState<'total' | 'breakdown' | 'average'>('total');
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
 
   // Compute live metrics from data
   const totalStudentsCount = 1248 + (students.length - 8);
@@ -739,53 +749,215 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </ResponsiveContainer>
         </div>
 
-        {/* Detailed Class Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-2">
+        {/* Detailed Class Cards Grid - Responsive, Clean & Professional */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-2">
           {classBreakdownData.map((c) => {
             return (
               <div
                 key={c.name}
-                className="p-4 rounded-xl bg-[#f4f3f2]/60 border border-[#becabd]/40 hover:bg-[#ffffff] hover:shadow-sm transition-all"
+                onClick={() => {
+                  if (onNavigateToStudents) onNavigateToStudents(c.name);
+                  else if (onNavigateToClasses) onNavigateToClasses();
+                }}
+                className="bg-[#ffffff] rounded-2xl border border-[#becabd]/60 hover:border-[#006130]/60 p-4 transition-all duration-200 shadow-[0_2px_8px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_24px_rgba(0,97,48,0.08)] hover:-translate-y-1 relative group overflow-hidden flex flex-col justify-between cursor-pointer"
               >
-                <div className="flex justify-between items-center mb-1.5">
-                  <span className="font-bold text-sm text-[#1a1c1c] flex items-center gap-1.5">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c.color }}></span>
-                    {c.name}
-                  </span>
-                  <span className="text-xs font-semibold text-[#3f4940] bg-white px-2 py-0.5 rounded-md border border-[#becabd]/40">
-                    {c.studentsCount} Siswa
-                  </span>
-                </div>
+                {/* Top Accent Color Bar */}
+                <div
+                  className="absolute top-0 left-0 right-0 h-1 transition-all duration-200 group-hover:h-1.5"
+                  style={{ backgroundColor: c.color || '#006130' }}
+                />
 
-                <div className="text-lg font-black text-[#006130] mt-1">{formatRupiah(c.totalBalance)}</div>
-
-                {/* 80/20 Mini Pill Indicators */}
-                <div className="flex items-center gap-2 my-2 text-[11px]">
-                  <div className="flex-1 bg-[#107c41]/10 text-[#006130] px-2 py-1 rounded-md font-semibold flex items-center justify-between">
-                    <span className="text-[10px]">Bisa:</span>
-                    <span>{formatRupiah(c.availableBalance)}</span>
+                <div>
+                  {/* Class Header: Title & Student Badge */}
+                  <div className="flex items-center justify-between gap-2 mb-2 pt-0.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0 ring-2 ring-[#faf9f8]"
+                        style={{ backgroundColor: c.color || '#006130' }}
+                      />
+                      <h4
+                        className="font-bold text-sm text-[#1a1c1c] group-hover:text-[#006130] transition-colors truncate"
+                        title={c.name}
+                      >
+                        {c.name}
+                      </h4>
+                    </div>
+                    <span className="shrink-0 text-[11px] font-bold text-[#3f4940] bg-[#faf9f8] px-2.5 py-0.5 rounded-full border border-[#becabd]/60 whitespace-nowrap shadow-2xs">
+                      {c.studentsCount} Siswa
+                    </span>
                   </div>
-                  <div className="flex-1 bg-[#ba1a1a]/10 text-[#ba1a1a] px-2 py-1 rounded-md font-semibold flex items-center justify-between">
-                    <span className="text-[10px]">Kunci:</span>
-                    <span>{formatRupiah(c.lockedBalance)}</span>
+
+                  {/* Total Balance Amount */}
+                  <div className="my-2">
+                    <div className="text-[10px] font-semibold text-[#6f7a6f] uppercase tracking-wider">
+                      Total Saldo
+                    </div>
+                    <div
+                      className="text-lg sm:text-xl font-black text-[#006130] tracking-tight truncate mt-0.5"
+                      title={formatRupiah(c.totalBalance)}
+                    >
+                      {formatRupiah(c.totalBalance)}
+                    </div>
+                  </div>
+
+                  {/* 80/20 Liquid & Locked Breakdown (Structured 2-Column Grid) */}
+                  <div className="grid grid-cols-2 gap-2 my-2.5">
+                    {/* 80% Liquid */}
+                    <div className="bg-[#006130]/5 hover:bg-[#006130]/10 border border-[#006130]/15 rounded-xl p-2 transition-colors">
+                      <div className="flex items-center gap-1 text-[10px] font-bold text-[#006130] mb-0.5 whitespace-nowrap">
+                        <span className="material-symbols-outlined text-[12px]">lock_open</span>
+                        <span>Likuid 80%</span>
+                      </div>
+                      <div
+                        className="text-xs font-black text-[#006130] truncate"
+                        title={formatRupiah(c.availableBalance)}
+                      >
+                        {formatRupiah(c.availableBalance)}
+                      </div>
+                    </div>
+
+                    {/* 20% Locked */}
+                    <div className="bg-[#ba1a1a]/5 hover:bg-[#ba1a1a]/10 border border-[#ba1a1a]/15 rounded-xl p-2 transition-colors">
+                      <div className="flex items-center gap-1 text-[10px] font-bold text-[#ba1a1a] mb-0.5 whitespace-nowrap">
+                        <span className="material-symbols-outlined text-[12px]">lock</span>
+                        <span>Kunci 20%</span>
+                      </div>
+                      <div
+                        className="text-xs font-black text-[#ba1a1a] truncate"
+                        title={formatRupiah(c.lockedBalance)}
+                      >
+                        {formatRupiah(c.lockedBalance)}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="w-full bg-[#e3e2e1] h-1.5 rounded-full overflow-hidden mb-1.5">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${c.percentage}%`, backgroundColor: c.color }}
-                  ></div>
-                </div>
-                <div className="flex justify-between text-[11px] text-[#3f4940]">
-                  <span>Target: {formatRupiah(c.target)}</span>
-                  <span className="font-bold text-[#006130]">{c.percentage}%</span>
+                {/* Progress Bar and Target */}
+                <div className="space-y-1.5 pt-1.5 border-t border-[#becabd]/30 mt-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-[#3f4940] flex items-center gap-1 min-w-0">
+                      <span className="text-[10px] text-[#6f7a6f]">Target:</span>
+                      <span className="font-semibold text-[#1a1c1c] truncate">{formatRupiah(c.target)}</span>
+                    </span>
+                    <span
+                      className="font-black text-xs shrink-0 ml-2"
+                      style={{ color: c.color || '#006130' }}
+                    >
+                      {c.percentage}%
+                    </span>
+                  </div>
+
+                  <div className="w-full bg-[#f4f3f2] h-2 rounded-full overflow-hidden p-0.5 border border-[#becabd]/40">
+                    <div
+                      className="h-full rounded-full transition-all duration-700 ease-out"
+                      style={{
+                        width: `${Math.max(c.percentage, 2)}%`,
+                        backgroundColor: c.color || '#006130',
+                      }}
+                    />
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* Official Footer: App Brand, Version & Helpdesk */}
+      <footer className="mt-8 pt-6 border-t border-[#becabd]/60 bg-[#ffffff] rounded-2xl p-5 sm:p-6 shadow-xs border border-[#becabd]/60">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+          {/* Brand & Version Info */}
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="p-2 bg-[#faf9f8] rounded-xl border border-slate-200/80 shrink-0">
+              <TabsiLogo size="sm" variant="modern" showByline={true} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-black text-[#1a1c1c] tracking-tight">{APP_BRAND_NAME}</span>
+                <span className="px-2 py-0.5 rounded-full bg-[#006130]/10 text-[#006130] text-[10px] font-extrabold border border-[#006130]/20">
+                  {APP_VERSION}
+                </span>
+                <span className="text-[10px] text-[#6f7a6f] hidden sm:inline">• Sistem Informasi Tabungan Siswa</span>
+              </div>
+              <p className="text-[11px] text-[#3f4940] mt-0.5">
+                Pengelolaan kasir tabungan sekolah modern dengan enkripsi &amp; pemantauan real-time.
+              </p>
+            </div>
+          </div>
+
+          {/* Helpdesk & Support Contacts */}
+          <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+            {/* WhatsApp Helpdesk Button */}
+            <a
+              href={APP_HELPDESK_WA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300/80 text-emerald-950 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs group cursor-pointer"
+              title="Konsultasi cepat via WhatsApp Helpdesk"
+            >
+              <span className="w-5 h-5 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs">
+                <span className="material-symbols-outlined text-xs">chat</span>
+              </span>
+              <div className="text-left">
+                <span className="text-[9px] block text-emerald-800 font-semibold uppercase tracking-wider leading-none">
+                  WA Helpdesk
+                </span>
+                <span className="font-extrabold text-[11px] text-emerald-950">{APP_HELPDESK_PHONE}</span>
+              </div>
+            </a>
+
+            {/* Email Helpdesk Button */}
+            <a
+              href={`mailto:${APP_HELPDESK_EMAIL}?subject=Helpdesk%20Bantuan%20Aplikasi%20TABSI`}
+              className="flex-1 sm:flex-initial px-3.5 py-2 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-950 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs group cursor-pointer"
+              title={`Kirim email ke ${APP_HELPDESK_EMAIL}`}
+            >
+              <span className="w-5 h-5 rounded-lg bg-[#005db5] text-white flex items-center justify-center text-xs">
+                <span className="material-symbols-outlined text-xs">mail</span>
+              </span>
+              <div className="text-left">
+                <span className="text-[9px] block text-blue-800 font-semibold uppercase tracking-wider leading-none">
+                  Email Bantuan
+                </span>
+                <span className="font-extrabold text-[11px] text-blue-950 truncate max-w-[170px] block">
+                  {APP_HELPDESK_EMAIL}
+                </span>
+              </div>
+            </a>
+
+            {/* Modal Trigger: Detail Aplikasi */}
+            <button
+              type="button"
+              onClick={() => setIsAboutModalOpen(true)}
+              className="px-3.5 py-2.5 rounded-xl bg-[#faf9f8] hover:bg-[#e9e8e7] border border-[#becabd]/80 text-[#1a1c1c] text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <span className="material-symbols-outlined text-sm text-[#006130]">info</span>
+              <span>Tentang Aplikasi</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Copyright & Security Line */}
+        <div className="mt-4 pt-3 border-t border-[#becabd]/30 flex flex-wrap items-center justify-between gap-2 text-[10px] text-[#6f7a6f]">
+          <div>
+            © 2026 <strong>{APP_BRAND_NAME}</strong>. Hak Cipta Dilindungi Undang-Undang.
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1 text-emerald-700 font-semibold">
+              <span className="material-symbols-outlined text-xs">verified_user</span>
+              <span>Isolasi Data Terenkripsi</span>
+            </span>
+            <span>•</span>
+            <span className="text-[#3f4940]">Layanan Bantuan: Senin - Sabtu (08.00 - 17.00 WIB)</span>
+          </div>
+        </div>
+      </footer>
+
+      {/* About & Helpdesk Modal */}
+      <AppAboutModal
+        isOpen={isAboutModalOpen}
+        onClose={() => setIsAboutModalOpen(false)}
+      />
     </div>
   );
 };

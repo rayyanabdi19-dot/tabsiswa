@@ -4,6 +4,14 @@ import { showToast } from './Toast';
 import { INITIAL_STUDENTS } from '../data/mockData';
 import { TabsiLogo } from './TabsiLogo';
 import {
+  AppAboutModal,
+  APP_VERSION,
+  APP_BRAND_NAME,
+  APP_HELPDESK_EMAIL,
+  APP_HELPDESK_PHONE,
+  APP_HELPDESK_WA_URL,
+} from './AppAboutModal';
+import {
   getRegisteredAccounts,
   registerNewAccount,
   DEFAULT_ADMIN_ACCOUNT,
@@ -59,6 +67,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [studentRegAddress, setStudentRegAddress] = useState('');
   const [studentRegPin, setStudentRegPin] = useState('123456');
   const [touchedStudentNisn, setTouchedStudentNisn] = useState(false);
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
 
   // Load and synchronize active accounts and school name
   useEffect(() => {
@@ -841,12 +850,86 @@ export const LoginView: React.FC<LoginViewProps> = ({
           </div>
         )}
 
-        {/* Security & Privacy Badge */}
-        <div className="mt-6 pt-4 border-t border-slate-200 text-center flex items-center justify-center gap-2 text-[10px] text-slate-600 font-medium">
-          <span className="material-symbols-outlined text-xs text-emerald-600">verified_user</span>
-          <span>TABSI by MD2R • Terlindungi Enkripsi &amp; Isolasi Data Penuh</span>
+        {/* Helpdesk & Branding Section on Login Page */}
+        <div className="mt-5 pt-4 border-t border-slate-200/80 space-y-2.5">
+          {/* Brand & Version Badge */}
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+            <div className="flex items-center gap-1.5 font-extrabold text-slate-800">
+              <span className="material-symbols-outlined text-sm text-[#006130]">verified</span>
+              <span>{APP_BRAND_NAME}</span>
+              <span className="px-1.5 py-0.2 rounded-md bg-emerald-100 text-[#006130] text-[9px] font-black">
+                {APP_VERSION}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsAboutModalOpen(true)}
+              className="text-[10px] font-bold text-[#005db5] hover:text-[#004a93] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-xs">info</span>
+              <span>Tentang Aplikasi</span>
+            </button>
+          </div>
+
+          {/* Helpdesk Contact Buttons */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px]">
+            {/* WhatsApp Helpdesk */}
+            <a
+              href={APP_HELPDESK_WA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-200 text-emerald-950 flex items-center justify-between transition-colors group cursor-pointer"
+              title="Hubungi Helpdesk WhatsApp 082186371356"
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="w-5 h-5 rounded-md bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-xs">chat</span>
+                </span>
+                <div className="truncate">
+                  <span className="font-bold block text-[10px] text-emerald-900 leading-tight">WA Helpdesk:</span>
+                  <span className="font-semibold text-[10px] text-emerald-800">{APP_HELPDESK_PHONE}</span>
+                </div>
+              </div>
+              <span className="material-symbols-outlined text-xs text-emerald-700 group-hover:translate-x-0.5 transition-transform shrink-0">
+                open_in_new
+              </span>
+            </a>
+
+            {/* Email Helpdesk */}
+            <a
+              href={`mailto:${APP_HELPDESK_EMAIL}?subject=Bantuan%20Login%20TABSI`}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-slate-900 flex items-center justify-between transition-colors group cursor-pointer"
+              title={`Kirim email ke ${APP_HELPDESK_EMAIL}`}
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="w-5 h-5 rounded-md bg-[#005db5] text-white flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-xs">mail</span>
+                </span>
+                <div className="truncate">
+                  <span className="font-bold block text-[10px] text-slate-800 leading-tight">Email Helpdesk:</span>
+                  <span className="font-semibold text-[9px] text-slate-600 truncate block">{APP_HELPDESK_EMAIL}</span>
+                </div>
+              </div>
+              <span className="material-symbols-outlined text-xs text-slate-600 group-hover:translate-x-0.5 transition-transform shrink-0">
+                open_in_new
+              </span>
+            </a>
+          </div>
+
+          {/* Security & Isolation Badge */}
+          <div className="text-center flex items-center justify-center gap-1.5 text-[9px] text-slate-500 pt-1">
+            <span className="material-symbols-outlined text-xs text-emerald-600">lock</span>
+            <span>Enkripsi 256-bit • Ruang Kerja Data Kasir Terisolasi Penuh</span>
+          </div>
         </div>
       </div>
+
+      {/* About & Helpdesk Modal */}
+      <AppAboutModal
+        isOpen={isAboutModalOpen}
+        onClose={() => setIsAboutModalOpen(false)}
+      />
     </div>
   );
 };

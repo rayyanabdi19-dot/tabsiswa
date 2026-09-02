@@ -1,7 +1,17 @@
 import React, { useState, useMemo } from 'react';
-import { Student, Transaction, SchoolInfo } from '../types';
+import { Student, Transaction, SchoolInfo, WhatsAppReceiptPayload } from '../types';
 import { formatRupiah, getSavingsBreakdown } from '../utils/formatters';
 import { showToast } from './Toast';
+import { TabsiLogo } from './TabsiLogo';
+import { ReceiptPrintAndShareModal } from './ReceiptPrintAndShareModal';
+import {
+  AppAboutModal,
+  APP_VERSION,
+  APP_BRAND_NAME,
+  APP_HELPDESK_EMAIL,
+  APP_HELPDESK_PHONE,
+  APP_HELPDESK_WA_URL,
+} from './AppAboutModal';
 
 interface StudentPortalViewProps {
   student: Student;
@@ -34,6 +44,7 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReceiptTx, setSelectedReceiptTx] = useState<Transaction | null>(null);
   const [showPassbookModal, setShowPassbookModal] = useState(false);
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
 
   // Password change state
   const [oldPin, setOldPin] = useState('');
@@ -723,87 +734,82 @@ export const StudentPortalView: React.FC<StudentPortalViewProps> = ({
         </div>
       )}
 
-      {/* ================= MODAL KUITANSI DIGITAL ================= */}
-      {selectedReceiptTx && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#becabd] relative animate-in fade-in zoom-in-95 duration-150">
-            {/* Header Kuitansi */}
-            <div className="text-center pb-4 border-b border-dashed border-[#becabd]">
-              <span className="material-symbols-outlined text-3xl text-[#006130] mb-1">receipt</span>
-              <h3 className="font-extrabold text-base text-[#1a1c1c] uppercase">{schoolInfo.name}</h3>
-              <p className="text-[11px] text-[#6f7a6f]">BUKTI MUTASI TABUNGAN RESMI</p>
-              <p className="text-[10px] font-mono text-[#6f7a6f] mt-1">Ref: {selectedReceiptTx.id}</p>
+      {/* Official Helpdesk Footer for Student Portal */}
+      <footer className="mt-8 pt-5 border-t border-[#becabd]/60 bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-[#becabd]/60">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-1.5 bg-[#faf9f8] rounded-xl border border-slate-200 shrink-0">
+              <TabsiLogo size="sm" variant="modern" showByline={true} />
             </div>
-
-            {/* Content Details */}
-            <div className="py-4 space-y-2.5 text-xs">
-              <div className="flex justify-between">
-                <span className="text-[#6f7a6f]">Tanggal:</span>
-                <span className="font-bold text-[#1a1c1c]">{selectedReceiptTx.date}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#6f7a6f]">Nama Siswa:</span>
-                <span className="font-bold text-[#1a1c1c]">{selectedReceiptTx.studentName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#6f7a6f]">NISN / Kelas:</span>
-                <span className="font-mono text-[#1a1c1c]">
-                  {selectedReceiptTx.studentNisn} ({selectedReceiptTx.className})
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-black text-xs text-[#1a1c1c]">{APP_BRAND_NAME}</span>
+                <span className="text-[9px] font-black px-2 py-0.2 rounded-full bg-[#006130]/10 text-[#006130]">
+                  {APP_VERSION}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-[#6f7a6f]">Jenis Transaksi:</span>
-                <span
-                  className={`font-bold ${
-                    selectedReceiptTx.type === 'deposit' ? 'text-[#006130]' : 'text-[#ba1a1a]'
-                  }`}
-                >
-                  {selectedReceiptTx.type === 'deposit' ? 'SETORAN MASUK' : 'PENARIKAN KAS'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-[#6f7a6f]">Keterangan:</span>
-                <span className="text-[#1a1c1c] text-right font-medium max-w-[200px]">
-                  {selectedReceiptTx.notes || '-'}
-                </span>
-              </div>
-
-              <div className="pt-3 border-t border-[#becabd]/60 flex justify-between items-center">
-                <span className="font-bold text-sm text-[#1a1c1c]">NOMINAL:</span>
-                <span
-                  className={`font-black text-lg ${
-                    selectedReceiptTx.type === 'deposit' ? 'text-[#006130]' : 'text-[#ba1a1a]'
-                  }`}
-                >
-                  {formatRupiah(selectedReceiptTx.amount)}
-                </span>
-              </div>
-            </div>
-
-            {/* Footer Stempel */}
-            <div className="p-3 bg-[#faf9f8] rounded-xl border border-[#becabd]/60 text-center text-[10px] text-[#6f7a6f]">
-              <p className="font-bold text-[#006130]">TERVERIFIKASI SISTEM KASIR SEKOLAH</p>
-              <p>Petugas: {selectedReceiptTx.adminName || 'Bendahara'}</p>
-            </div>
-
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={() => window.print()}
-                className="flex-1 py-2 bg-[#006130] text-white font-bold text-xs rounded-lg flex items-center justify-center gap-1.5 cursor-pointer hover:bg-[#107c41]"
-              >
-                <span className="material-symbols-outlined text-sm">print</span>
-                <span>Cetak Kuitansi</span>
-              </button>
-              <button
-                onClick={() => setSelectedReceiptTx(null)}
-                className="px-4 py-2 border border-[#becabd] text-[#3f4940] font-bold text-xs rounded-lg hover:bg-[#f4f3f2] cursor-pointer"
-              >
-                Tutup
-              </button>
+              <p className="text-[10px] text-[#6f7a6f] mt-0.5">
+                Portal Tabungan Siswa Mandiri • Terlindungi Enkripsi Transaksi
+              </p>
             </div>
           </div>
+
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            <a
+              href={APP_HELPDESK_WA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-950 font-bold text-xs flex items-center gap-1.5 border border-emerald-200 transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm text-emerald-700">chat</span>
+              <span>WA Helpdesk: {APP_HELPDESK_PHONE}</span>
+            </a>
+            <button
+              type="button"
+              onClick={() => setIsAboutModalOpen(true)}
+              className="px-3 py-1.5 rounded-xl bg-[#faf9f8] hover:bg-[#e9e8e7] text-[#1a1c1c] font-bold text-xs border border-[#becabd]/70 flex items-center gap-1 cursor-pointer transition-colors"
+            >
+              <span className="material-symbols-outlined text-sm text-[#006130]">info</span>
+              <span>Tentang Aplikasi</span>
+            </button>
+          </div>
         </div>
-      )}
+      </footer>
+
+      {/* About & Helpdesk Modal */}
+      <AppAboutModal
+        isOpen={isAboutModalOpen}
+        onClose={() => setIsAboutModalOpen(false)}
+      />
+
+      {/* ================= MODAL KUITANSI DIGITAL & WHATSAPP ================= */}
+      <ReceiptPrintAndShareModal
+        isOpen={!!selectedReceiptTx}
+        payload={
+          selectedReceiptTx
+            ? {
+                transactionId: selectedReceiptTx.id,
+                studentName: student.name,
+                studentNisn: student.nisn,
+                className: student.className,
+                guardianName: student.guardianName,
+                guardianPhone: student.guardianPhone,
+                type: selectedReceiptTx.type,
+                amount: selectedReceiptTx.amount,
+                date: selectedReceiptTx.date,
+                time: selectedReceiptTx.time,
+                notes: selectedReceiptTx.notes,
+                totalBalance: student.balance,
+                availableBalance: breakdown.available,
+                lockedBalance: breakdown.locked,
+                adminName: selectedReceiptTx.adminName || 'Bendahara',
+                schoolName: schoolInfo.name,
+              }
+            : null
+        }
+        schoolInfo={schoolInfo}
+        onClose={() => setSelectedReceiptTx(null)}
+      />
 
       {/* ================= MODAL CETAK BUKU TABUNGAN DIGITAL ================= */}
       {showPassbookModal && (

@@ -3,6 +3,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Student, Transaction, SchoolInfo, ClassInfo } from '../types';
 import { formatRupiah } from '../utils/formatters';
 import { TabsiLogo } from './TabsiLogo';
+import {
+  APP_VERSION,
+  APP_BRAND_NAME,
+  APP_HELPDESK_EMAIL,
+  APP_HELPDESK_PHONE,
+  APP_HELPDESK_WA_URL,
+} from './AppAboutModal';
 
 interface UserGuideViewProps {
   isAdmin: boolean;
@@ -29,6 +36,9 @@ export const UserGuideView: React.FC<UserGuideViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [expandedSectionId, setExpandedSectionId] = useState<string | null>('guide-admin-1');
+  const [faqSearchQuery, setFaqSearchQuery] = useState('');
+  const [faqFilterCategory, setFaqFilterCategory] = useState('all');
+  const [expandedFaqId, setExpandedFaqId] = useState<number | null>(0);
 
   // Dynamic system status and real-time statistics
   const dynamicStats = useMemo(() => {
@@ -613,6 +623,222 @@ export const UserGuideView: React.FC<UserGuideViewProps> = ({
         )}
       </div>
 
+      {/* ================= PUSAT TANYA JAWAB (Q&A / FAQ) ================= */}
+      <div className="bg-[#ffffff] rounded-2xl sm:rounded-3xl p-5 sm:p-7 border border-[#becabd]/70 shadow-xs space-y-5">
+        {/* Header Q&A */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#becabd]/40 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#006130]/10 text-[#006130] flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-2xl">quiz</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-black text-[#1a1c1c]">Tanya Jawab &amp; Bantuan Cepat (Q&amp;A)</h3>
+                <span className="px-2 py-0.5 rounded-full bg-[#006130]/10 text-[#006130] text-[10px] font-black">
+                  FAQ Resmi
+                </span>
+              </div>
+              <p className="text-xs text-[#6f7a6f] mt-0.5">
+                Jawaban praktis untuk pertanyaan paling umum seputar sistem kas tabungan TABSI.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-[#6f7a6f] hidden md:inline">Butuh respon kilat?</span>
+            <a
+              href={APP_HELPDESK_WA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-950 border border-emerald-200 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm text-emerald-700">chat</span>
+              <span>Hubungi WA Helpdesk</span>
+            </a>
+          </div>
+        </div>
+
+        {/* Search Bar & Category Filter */}
+        <div className="space-y-3">
+          <div className="relative">
+            <span className="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6f7a6f] text-lg">
+              search
+            </span>
+            <input
+              type="text"
+              value={faqSearchQuery}
+              onChange={(e) => setFaqSearchQuery(e.target.value)}
+              placeholder="Ketik kata kunci pertanyaan (contoh: saldo 80/20, lupa PIN, backup data, cetak kuitansi, WA)..."
+              className="w-full pl-10 pr-10 py-2.5 bg-[#f4f3f2] rounded-xl border border-[#becabd]/60 text-xs text-[#1a1c1c] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#006130]"
+            />
+            {faqSearchQuery && (
+              <button
+                onClick={() => setFaqSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6f7a6f] hover:text-[#1a1c1c] p-1"
+              >
+                <span className="material-symbols-outlined text-sm">close</span>
+              </button>
+            )}
+          </div>
+
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+            {[
+              { id: 'all', label: 'Semua Pertanyaan', icon: 'apps' },
+              { id: 'saldo', label: 'Aturan Saldo 80/20', icon: 'savings' },
+              { id: 'pin', label: 'Login & PIN Siswa', icon: 'key' },
+              { id: 'transaksi', label: 'Kasir & Setor Tarik', icon: 'point_of_sale' },
+              { id: 'backup', label: 'Backup & Keamanan', icon: 'settings_backup_restore' },
+              { id: 'laporan', label: 'Laporan & WhatsApp', icon: 'print' },
+            ].map((cat) => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setFaqFilterCategory(cat.id)}
+                className={`px-3 py-1.5 rounded-full font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer text-xs ${
+                  faqFilterCategory === cat.id
+                    ? 'bg-[#006130] text-white shadow-2xs'
+                    : 'bg-[#faf9f8] text-[#3f4940] hover:bg-[#e9e8e7] border border-[#becabd]/60'
+                }`}
+              >
+                <span className="material-symbols-outlined text-sm">{cat.icon}</span>
+                <span>{cat.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Q&A Accordion Items */}
+        <div className="space-y-2.5">
+          {[
+            {
+              id: 0,
+              cat: 'saldo',
+              categoryLabel: 'Aturan Saldo 80/20',
+              q: 'Bagaimana pembagian persentase saldo 80% dan 20% bekerja secara otomatis?',
+              a: 'Ketika siswa melakukan setoran tabungan (misal Rp 100.000), sistem TABSI secara cerdas membaginya ke dalam 2 pos dana:\n\n1. 80% Saldo Likuid (Bisa Ditarik = Rp 80.000): Saldo ini bebas ditarik oleh siswa/orang tua sewaktu-waktu untuk uang saku, kegiatan sekolah, atau kebutuhan harian.\n2. 20% Saldo Terkunci (Cadangan = Rp 20.000): Saldo ini otomatis diproteksi sebagai tabungan simpanan masa depan, kelulusan, atau uang pangkal jenjang berikutnya.\n\nCatatan: Penarikan normal hanya memotong saldo likuid. Apabila siswa lulus atau membutuhkan penarikan darurat total, bendahara dapat memilih opsi penarikan khusus di kasir.',
+            },
+            {
+              id: 1,
+              cat: 'pin',
+              categoryLabel: 'Login & PIN Siswa',
+              q: 'Bagaimana cara siswa masuk ke portal dan apa yang harus dilakukan jika lupa PIN?',
+              a: 'Siswa atau wali murid dapat login melalui halaman Login dengan memilih peran "Siswa/Orang Tua", lalu memasukkan nomor NISN dan PIN 6 digit (PIN awal bawaan: 123456).\n\nJika siswa lupa PIN, Bendahara atau Wali Kelas dapat membuka menu "Data Siswa", klik nama siswa tersebut, lalu pada tab "Pengaturan PIN Siswa" klik "Reset ke Default (123456)" atau "Buat PIN Baru", dan klik tombol "Salin Kredensial WA" untuk mengirimkannya ke nomor orang tua.',
+            },
+            {
+              id: 2,
+              cat: 'transaksi',
+              categoryLabel: 'Kasir & Setor Tarik',
+              q: 'Bagaimana cara melayani setoran dan penarikan cepat di kasir sekolah?',
+              a: 'Buka menu "Kasir Transaksi" (atau tombol Cepat Setor/Tarik di dashboard).\n1. Ketik nama atau nomor NISN siswa pada kolom pencarian.\n2. Pilih jenis transaksi "Setor Tunai" atau "Tarik Tunai".\n3. Masukkan nominal rupiah (sistem akan otomatis memvalidasi apakah saldo likuid mencukupi jika transaksi adalah penarikan).\n4. Klik "Simpan Transaksi". Struk digital akan muncul dan siap dicetak ke printer thermal/A4 atau dikirim ke WhatsApp.',
+            },
+            {
+              id: 3,
+              cat: 'laporan',
+              categoryLabel: 'Laporan & WhatsApp',
+              q: 'Bagaimana format pengiriman notifikasi setoran tabungan ke WhatsApp orang tua?',
+              a: 'Setiap transaksi selesai dicatat, klik tombol "Format WhatsApp" (ikon chat WA). Aplikasi akan otomatis menyusun teks konfirmasi rapi yang memuat: Nama Siswa, NISN, Kelas, Jenis Transaksi, Nominal, Saldo Likuid & Saldo Kunci Terbaru, Tanggal & Jam, serta Nama Bendahara Bertugas. Anda tinggal menempelkan (paste) pesan tersebut ke WhatsApp orang tua.',
+            },
+            {
+              id: 4,
+              cat: 'backup',
+              categoryLabel: 'Backup & Keamanan',
+              q: 'Bagaimana cara mengamankan data kas tabungan agar tidak hilang saat ganti perangkat?',
+              a: 'Sangat disarankan untuk melakukan backup rutin setiap pekan (1 minggu 1 kali). Buka menu "Pengaturan" -> pilih tab "Backup & Restore" -> klik tombol "Unduh Cadangan Kas (JSON)". Simpan berkas tersebut di Google Drive atau flashdisk sekolah. Jika sewaktu-waktu Anda menggunakan laptop/komputer baru, cukup unggah kembali berkas JSON tersebut untuk mengembalikan seluruh siswa dan mutasi.',
+            },
+            {
+              id: 5,
+              cat: 'laporan',
+              categoryLabel: 'Laporan & WhatsApp',
+              q: 'Bagaimana cara mencetak rekapitulasi pembukuan kas bulanan dan buku tabungan?',
+              a: 'Masuk ke menu "Laporan Keuangan", pilih jenis dokumen:\n• Rekapitulasi Kasir Keseluruhan (Penerimaan & Pengeluaran)\n• Rekapitulasi Per Rombel/Kelas\n• Mutasi Buku Tabungan Fisik Siswa\n\nSetelah memilih periode tanggal, klik tombol "Cetak PDF (A4)". Format laporan telah disesuaikan dengan Kop Surat Sekolah dan lembar tanda tangan bendahara/kepala sekolah.',
+            },
+            {
+              id: 6,
+              cat: 'transaksi',
+              categoryLabel: 'Kasir & Setor Tarik',
+              q: 'Bagaimana cara mendeteksi siswa yang pasif atau sudah lama tidak menabung?',
+              a: 'Sistem TABSI memiliki panel otomatis "Notifikasi Siswa Pasif" di dashboard. Sistem memindai siswa yang tidak melakukan setoran selama lebih dari 30 hari dan menyediakan tombol "Kirim Pengingat WhatsApp" untuk memotivasi siswa dan wali murid agar terus gemar menabung.',
+            },
+            {
+              id: 7,
+              cat: 'backup',
+              categoryLabel: 'Helpdesk & Dukungan',
+              q: 'Apakah aplikasi TABSI dapat diintegrasikan dengan Google Sheets sekolah?',
+              a: 'Ya, TABSI mendukung integrasi Google Sheets. Anda dapat menghubungkan Google Account di menu Pengaturan untuk mengekspor data mutasi atau melakukan sinkronisasi berkala ke spreadsheet sekolah.',
+            },
+          ]
+            .filter((item) => {
+              const matchCat = faqFilterCategory === 'all' || item.cat === faqFilterCategory;
+              const matchSearch =
+                item.q.toLowerCase().includes(faqSearchQuery.toLowerCase()) ||
+                item.a.toLowerCase().includes(faqSearchQuery.toLowerCase()) ||
+                item.categoryLabel.toLowerCase().includes(faqSearchQuery.toLowerCase());
+              return matchCat && matchSearch;
+            })
+            .map((item) => {
+              const isExpanded = expandedFaqId === item.id;
+              return (
+                <div
+                  key={item.id}
+                  className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                    isExpanded
+                      ? 'bg-emerald-50/25 border-[#006130]/40 shadow-xs'
+                      : 'bg-white border-[#becabd]/60 hover:border-[#becabd]'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setExpandedFaqId(isExpanded ? null : item.id)}
+                    className="w-full text-left p-4 sm:p-4.5 flex items-start justify-between gap-3.5 cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3 min-w-0">
+                      <span className="w-6 h-6 rounded-lg bg-[#006130]/10 text-[#006130] font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
+                        Q
+                      </span>
+                      <div>
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#006130] block mb-0.5">
+                          {item.categoryLabel}
+                        </span>
+                        <h4 className="font-bold text-xs sm:text-sm text-[#1a1c1c] leading-snug">
+                          {item.q}
+                        </h4>
+                      </div>
+                    </div>
+                    <span
+                      className={`material-symbols-outlined text-xl text-[#6f7a6f] shrink-0 transition-transform duration-200 ${
+                        isExpanded ? 'rotate-180 text-[#006130]' : ''
+                      }`}
+                    >
+                      expand_more
+                    </span>
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <div className="px-4 sm:px-5 pb-5 pt-2 text-xs text-[#3f4940] border-t border-[#006130]/10 flex items-start gap-3 bg-white/80">
+                          <span className="w-6 h-6 rounded-lg bg-emerald-600 text-white font-black text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                            A
+                          </span>
+                          <div className="leading-relaxed whitespace-pre-line text-xs sm:text-[13px] text-[#2c342c] font-normal">
+                            {item.a}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+
       {/* Security & Privacy Commitment Banner */}
       <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-5 text-white shadow-sm border border-slate-700">
         <div className="flex items-start gap-3.5">
@@ -629,6 +855,45 @@ export const UserGuideView: React.FC<UserGuideViewProps> = ({
             <p className="text-xs text-slate-300 mt-1 leading-relaxed">
               Sistem Tabungan Pintar menjaga integritas seluruh data transaksi keuangan sekolah secara ketat. Tidak ada alamat IP server internal yang ditampilkan kepada publik. PIN dan informasi sensitif murid terproteksi dengan isolasi otentikasi peran (RBAC) dan enkripsi standar perbankan.
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Official Helpdesk & Support Card */}
+      <div className="bg-[#ffffff] rounded-2xl p-5 sm:p-6 border border-[#becabd]/70 shadow-xs">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-[#006130]/10 text-[#006130] material-symbols-outlined text-base">
+                support_agent
+              </span>
+              <h4 className="text-sm font-black text-[#1a1c1c]">Butuh Bantuan Langsung dari Pengembang?</h4>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-[#006130] text-[10px] font-extrabold">
+                {APP_BRAND_NAME} • {APP_VERSION}
+              </span>
+            </div>
+            <p className="text-xs text-[#3f4940] mt-1">
+              Tim helpdesk siap membantu kendala operasional kasir, reset akun bendahara, maupun ekspor laporan.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            <a
+              href={APP_HELPDESK_WA_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-2xs transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm">chat</span>
+              <span>WhatsApp: {APP_HELPDESK_PHONE}</span>
+            </a>
+            <a
+              href={`mailto:${APP_HELPDESK_EMAIL}?subject=Helpdesk%20TABSI`}
+              className="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 border border-slate-300 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-sm text-[#005db5]">mail</span>
+              <span>{APP_HELPDESK_EMAIL}</span>
+            </a>
           </div>
         </div>
       </div>

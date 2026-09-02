@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Student, Transaction, TransactionType, WhatsAppReceiptPayload } from '../types';
+import { Student, Transaction, TransactionType, WhatsAppReceiptPayload, SchoolInfo } from '../types';
 import { formatRupiah, getSavingsBreakdown } from '../utils/formatters';
 import { showToast } from './Toast';
-import { WhatsAppReceiptModal } from './WhatsAppReceiptModal';
+import { ReceiptPrintAndShareModal } from './ReceiptPrintAndShareModal';
 
 interface TransactionInputViewProps {
   students: Student[];
@@ -11,6 +11,7 @@ interface TransactionInputViewProps {
   initialType?: TransactionType;
   schoolName?: string;
   adminName?: string;
+  schoolInfo?: SchoolInfo;
   onSaveTransaction: (transaction: Omit<Transaction, 'id'>) => void;
 }
 
@@ -20,6 +21,7 @@ export const TransactionInputView: React.FC<TransactionInputViewProps> = ({
   initialType = 'deposit',
   schoolName = 'SMA BINTANG GEMILANG',
   adminName = 'Siti Rahmawati (Bendahara)',
+  schoolInfo,
   onSaveTransaction,
 }) => {
   const [selectedStudent, setSelectedStudent] = useState<Student>(
@@ -516,10 +518,11 @@ export const TransactionInputView: React.FC<TransactionInputViewProps> = ({
         </div>
       </div>
 
-      {/* Real-Time WhatsApp Receipt Modal */}
-      <WhatsAppReceiptModal
+      {/* Real-Time Receipt Print & WhatsApp Share Modal */}
+      <ReceiptPrintAndShareModal
         isOpen={isWhatsappModalOpen}
         payload={whatsappPayload}
+        schoolInfo={schoolInfo}
         onClose={() => setIsWhatsappModalOpen(false)}
       />
     </div>

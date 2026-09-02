@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { Transaction, SchoolInfo } from '../types';
-import { formatRupiah, formatDateCustom, exportToCSV } from '../utils/formatters';
+import { Transaction, SchoolInfo, Student, WhatsAppReceiptPayload } from '../types';
+import { formatRupiah, formatDateCustom, exportToCSV, getSavingsBreakdown } from '../utils/formatters';
 import { exportTransactionsToPDF } from '../utils/pdfGenerator';
 import { showToast } from './Toast';
+import { ReceiptPrintAndShareModal } from './ReceiptPrintAndShareModal';
 
 interface HistoryViewProps {
   transactions: Transaction[];
   onOpenReport: () => void;
+  students?: Student[];
   schoolInfo?: SchoolInfo;
   adminName?: string;
 }
@@ -14,6 +16,7 @@ interface HistoryViewProps {
 export const HistoryView: React.FC<HistoryViewProps> = ({
   transactions,
   onOpenReport,
+  students = [],
   schoolInfo,
   adminName,
 }) => {
@@ -26,6 +29,10 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   const [searchFilter, setSearchFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // Selected Transaction for Receipt Print / WA
+  const [receiptPayload, setReceiptPayload] = useState<WhatsAppReceiptPayload | null>(null);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
   // PDF Export State
   const [isExportingPDF, setIsExportingPDF] = useState(false);
@@ -363,12 +370,40 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                   {visibleColumns.notes && (
                     <th className="p-4 text-xs font-bold text-[#3f4940] whitespace-nowrap">Notes</th>
                   )}
+                  <th className="p-4 text-xs font-bold text-[#3f4940] text-center whitespace-nowrap">Aksi / Struk</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#becabd]/40 text-sm text-[#1a1c1c]">
                 {currentRecords.length > 0 ? (
                   currentRecords.map((tx) => {
                     const isDeposit = tx.type === 'deposit';
+                    const targetStudent = students.find(
+                      (s) => s.id === tx.studentId || s.nisn === tx.studentNisn || s.name === tx.studentName
+                    );
+                    const breakdown = targetStudent ? getSavingsBreakdown(targetStudent.balance) : { available: 0, locked: 0 };
+
+                    const handleOpenReceipt = () => {
+                      setReceiptPayload({
+                        transactionId: tx.id,
+                        studentName: tx.studentName,
+                        studentNisn: tx.studentNisn,
+                        className: tx.className,
+                        guardianName: targetStudent?.guardianName,
+                        guardianPhone: targetStudent?.guardianPhone,
+                        type: tx.type,
+                        amount: tx.amount,
+                        date: tx.date,
+                        time: tx.time,
+                        notes: tx.notes,
+                        totalBalance: targetStudent ? targetStudent.balance : tx.amount,
+                        availableBalance: breakdown.available,
+                        lockedBalance: breakdown.locked,
+                        adminName: tx.adminName || adminName || 'Bendahara',
+                        schoolName: schoolInfo?.name || 'SMA BINTANG GEMILANG',
+                      });
+                      setIsReceiptModalOpen(true);
+                    };
+
                     return (
                       <tr key={tx.id} className="hover:bg-[#f4f3f2]/60 transition-colors group">
                         {visibleColumns.date && (
@@ -428,12 +463,23 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
                         {visibleColumns.notes && (
                           <td className="p-4 text-xs text-[#3f4940] max-w-xs truncate">{tx.notes || '-'}</td>
                         )}
+
+                        <td className="p-4 text-center whitespace-nowrap">
+                          <button
+                            onClick={handleOpenReceipt}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#faf9f8] hover:bg-[#006130] hover:text-white text-[#006130] border border-[#006130]/30 rounded-xl text-xs font-bold transition-all shadow-2xs cursor-pointer group/btn"
+                            title="Cetak Struk (Thermal / Biasa) atau Kirim WA"
+                          >
+                            <span className="material-symbols-outlined text-[15px]">receipt_long</span>
+                            <span>Struk &amp; WA</span>
+                          </button>
+                        </td>
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-sm text-[#3f4940]">
+                    <td colSpan={8} className="p-8 text-center text-sm text-[#3f4940]">
                       Tidak ada transaksi yang cocok dengan filter yang dipilih.
                     </td>
                   </tr>
@@ -534,6 +580,14 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* Struk & WhatsApp Modal for History Transactions */}
+      <ReceiptPrintAndShareModal
+        isOpen={isReceiptModalOpen}
+        payload={receiptPayload}
+        schoolInfo={schoolInfo}
+        onClose={() => setIsReceiptModalOpen(false)}
+      />
     </div>
   );
 };

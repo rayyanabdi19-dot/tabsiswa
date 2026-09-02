@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { ClassInfo, Student, Transaction } from '../types';
 import { formatRupiah, getSavingsBreakdown } from '../utils/formatters';
 import { ClassModal } from './ClassModal';
+import { ConfirmDeleteModal, DeleteTarget } from './ConfirmDeleteModal';
 import { showToast } from './Toast';
 
 interface ClassManagementSectionProps {
@@ -27,6 +28,8 @@ export const ClassManagementSection: React.FC<ClassManagementSectionProps> = ({
   const [selectedLevel, setSelectedLevel] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassInfo | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Calculate statistics per class
   const classStats = useMemo(() => {
@@ -94,23 +97,19 @@ export const ClassManagementSection: React.FC<ClassManagementSectionProps> = ({
   const handleDelete = (c: ClassInfo) => {
     const stats = classStats.get(c.name);
     const count = stats?.studentCount || 0;
+    setDeleteTarget({ type: 'class', item: c, studentCount: count });
+    setIsDeleteModalOpen(true);
+  };
 
-    if (count > 0) {
-      if (
-        !window.confirm(
-          `Kelas "${c.name}" saat ini memiliki ${count} siswa terdaftar. Apakah Anda yakin ingin menghapus kelas ini? Siswa akan tetap tersimpan dalam sistem.`
-        )
-      ) {
-        return;
-      }
-    } else {
-      if (!window.confirm(`Hapus kelas "${c.name}"?`)) {
-        return;
-      }
+  const handleExecuteDelete = () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.type === 'class') {
+      const c = deleteTarget.item;
+      onDeleteClass(c.id, c.name);
+      showToast('Kelas Dihapus', `Kelas ${c.name} berhasil dihapus dari daftar.`);
     }
-
-    onDeleteClass(c.id, c.name);
-    showToast('Kelas Dihapus', `Kelas ${c.name} berhasil dihapus dari daftar.`);
+    setIsDeleteModalOpen(false);
+    setDeleteTarget(null);
   };
 
   return (
@@ -410,6 +409,17 @@ export const ClassManagementSection: React.FC<ClassManagementSectionProps> = ({
         onSaveClass={onSaveClass}
         initialData={editingClass}
         existingClasses={classes}
+      />
+
+      {/* Confirmation Modal for Delete Class */}
+      <ConfirmDeleteModal
+        isOpen={isDeleteModalOpen}
+        target={deleteTarget}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setDeleteTarget(null);
+        }}
+        onConfirm={handleExecuteDelete}
       />
     </div>
   );
