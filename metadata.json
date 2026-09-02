@@ -1,0 +1,6 @@
+{
+  "name": "Tabungan Pintar",
+  "description": "Sistem Keuangan dan Pengelolaan Tabungan Siswa Sekolah Terpadu",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
